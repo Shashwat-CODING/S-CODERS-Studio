@@ -1,133 +1,772 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scodify - Free Music Streaming Software</title>
+    <link rel="icon" href="favicon.webp" type="image/webp">
+    <title>S-CLOUD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {"50":"#f0fdf4","100":"#dcfce7","200":"#bbf7d0","300":"#86efac","400":"#4ade80","500":"#22c55e","600":"#16a34a","700":"#15803d","800":"#166534","900":"#14532d","950":"#052e16"},
+                        youtube: {
+                            red: "#FF0000",
+                            darkRed: "#CC0000",
+                            lightGray: "#F1F1F1",
+                            darkGray: "#282828",
+                            black: "#0F0F0F"
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        .sidebar {
+            width: 60px;
+            transition: width 0.3s ease;
+        }
+
+        .sidebar.open {
+            width: 200px;
+        }
+
+        .sidebar-item {
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .playlist-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .playlist-modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
         body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #121212;
-    color: #E0E0E0;
-    text-align: center;
-    margin: 0;
-    padding: 0;
-}
-header {
-    background-color: #1DB954;
-    padding: 30px;
-    color: white;
-    border-bottom: 5px solid #333;
-    border-radius: 0 0 20px 20px;
-}
-.logo {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 5px solid white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    background: linear-gradient(135deg, #1DB954, #333);
-    padding: 5px;
-}
-h1 {
-    margin: 20px 0 10px 0;
-    font-size: 3em;
-}
-main {
-    padding: 50px 20px;
-    border-radius: 20px;
-    margin: 20px auto;
-    background-color: #1E1E1E;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    max-width: 900px;
-}
-.description {
-    margin-bottom: 30px;
-}
-h2 {
-    font-size: 2em;
-    margin-bottom: 20px;
-    color: #1DB954;
-}
-p {
-    font-size: 1.2em;
-    margin: 0 auto;
-    max-width: 800px;
-    line-height: 1.6;
-}
-.features {
-    text-align: left;
-    max-width: 800px;
-    margin: 30px auto;
-}
-.features h3 {
-    font-size: 1.5em;
-    color: #1DB954;
-}
-.features ul {
-    list-style-type: circle;
-    font-size: 1.2em;
-    padding-left: 20px;
-    line-height: 1.6;
-}
-.download {
-    margin: 40px 0;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-.download-btn {
-    display: inline-block;
-    padding: 15px 30px;
-    font-size: 1.2em;
-    color: white;
-    background-color: #333;
-    text-decoration: none;
-    border-radius: 50px;
-    transition: background-color 0.3s ease;
-}
-.download-btn:hover {
-    background-color: #1DB954;
-}
-footer {
-    background-color: #333;
-    color: white;
-    padding: 20px 0;
-    border-radius: 20px 20px 0 0;
-    margin-top: 20px;
-}
+            transition: background-color 1s ease;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+        }
+
+        .dark .glass {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            border-radius: 9999px;
+            overflow: hidden;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-container:focus-within {
+            box-shadow: 0 0 0 3px rgba(241, 142, 3, 0.5);
+        }
+
+        .search-input {
+            flex-grow: 1;
+            background-color: transparent;
+            padding: 0.75rem 1.25rem;
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 0.875rem;
+        }
+
+        .search-button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .custom-audio-player {
+            width: 100%;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .custom-audio-player audio {
+            width: 100%;
+            height: 40px;
+        }
+
+        .video-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .video-card {
+            background-color: rgba(40, 40, 40, 0.7);
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .video-thumbnail {
+            position: relative;
+            padding-top: 56.25%;
+            overflow: hidden;
+        }
+
+        .video-thumbnail img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .video-card:hover .video-thumbnail img {
+            transform: scale(1.05);
+        }
+
+        .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+
+        .video-card:hover .play-icon {
+            opacity: 1;
+        }
+
+        .play-icon svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
+        .artist-section {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+            padding-bottom: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .artist-section::-webkit-scrollbar {
+            display: none;  /* Chrome, Safari and Opera */
+        }
+
+        .artist-item {
+            display: inline-block;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            margin-right: 1rem;
+        }
+
+        .artist-item:hover {
+            transform: scale(1.03);
+        }
+
+        .artist-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 0.5rem;
+        }
+
+        .artist-name {
+            display: block;
+            width: 120px;
+            text-align: center;
+            white-space: normal;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px;
+            width: 250px;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            transition: left 0.3s ease;
+            z-index: 1000;
+        }
+
+        .dark .sidebar {
+            background-color: rgba(31, 41, 55, 0.9);
+        }
+
+        .sidebar.open {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 999;
+        }
+
+        /* Header toggle button styles */
+        .header-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        .header-toggle-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .dark .header-toggle-btn {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .dark .header-toggle-btn:hover {
+            background-color: rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
-<body>
-    <header>
-        <h1>S-Codify</h1>
-    </header>
-    
-    <main>
-        <section class="description">
-            <h2>!New update available.</h2>
-            <h2>The Ultimate Music Streaming Software</h2>
-            <p>Experience high-quality music streaming with S-Codify. It's completely free, with no ads and no hidden costs. Whether you're a casual listener or a music enthusiast, S-CODERS Studio offers you the best streaming experience with a sleek interface.</p>
-        </section>
-        <section class="features">
-            <h3>Key Features:</h3>
-            <ul>
-                <li>High-quality streaming with multiple bitrate options.</li>
-                <li>Easy-to-use interface with customizable playlists.</li>
-                <li>No ads, no interruptions, just pure music.</li>
-                <li>Regular updates with new features and improvements.</li>
-            </ul>
-        </section>
+<body class="text-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans min-h-screen text-sm">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="p-4">
+                <nav>
+                    <ul>
+                        <li class="mb-2">
+                            <a href="#" id="homeLink" class="sidebar-item flex items-center p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                                <span>Home</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="playlistLink" class="sidebar-item flex items-center p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                                </svg>
+                                <span>Playlists</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <div id="sidebarOverlay" class="sidebar-overlay"></div>
+        <!-- Main Content -->
+        <div class="flex-1">
+            <div class="relative z-10">
+                <header class="sticky top-0 z-50 glass">
+                    <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <!-- Toggle button in header -->
+                            <button id="headerToggleBtn" class="header-toggle-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
+                            <img src="favicon.webp" alt="S-CLOUD Logo" class="w-10 h-10 rounded-full shadow-lg">
+                            <div>
+                                <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 text-transparent bg-clip-text">S-CLOUD</h1>
+                                <span class="text-xs text-gray-600 dark:text-gray-300">Made with ❤️ by Shashwat</span>
+                            </div>
+                        </div>
+                        <button id="darkModeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-800 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                        </button>
+                    </div>
+                </header>
+
+                <main class="container mx-auto px-4 py-8 mb-24">
+                    <!-- Home Section -->
+                    <section id="homeSection">
+                        <form id="searchForm" class="mb-8">
+                            <div class="search-container bg-white/30 dark:bg-black/30">
+                                <input type="text" id="searchInput" placeholder="Search for songs..." class="search-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+                                <button type="button" id="clearSearch" class="search-button text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                                <span class="search-divider text-gray-400">|</span>
+                                <button type="submit" id="searchButton" class="search-button text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </form>
+
+                        <section id="artistSection" class="mb-8">
+                            <h2 class="text-3xl font-bold mb-4 text-primary-600 dark:text-primary-400">Popular Artists</h2>
+                            <div class="artist-section">
+                                <!-- Artist items will be dynamically added here -->
+                            </div>
+                        </section>
+
+                        <h2 id="resultsTitle" class="text-3xl font-bold mb-8 text-primary-600 dark:text-primary-400">Trending</h2>
+                        <div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+                    </section>
+
+                    <!-- Playlist Section -->
+                    <div id="playlistSection" class="section hidden">
+                        <h2 class="text-3xl font-bold mb-8 text-primary-600 dark:text-primary-400">Your Playlists</h2>
+                        
+                        <div id="playlistList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+                      
+                        <div class="mt-8">
+                          <h3 class="text-xl font-bold mb-4 text-primary-600 dark:text-primary-400">Create New Playlist</h3>
+                          <div class="flex flex-col sm:flex-row">
+                            <input type="text" id="newPlaylistName" placeholder="Playlist name" class="flex-grow p-2 border rounded mb-2 sm:mb-0 sm:mr-2">
+                            <button id="createPlaylistBtn" class="bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600">Create Playlist</button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div id="playlistSongs" class="mt-8 hidden">
+                        <h3 class="text-xl font-bold mb-4 text-primary-600 dark:text-primary-400">Playlist Songs</h3>
+                        <div id="playlistSongsList" class="space-y-2"></div>
+                      </div>
+
+                <footer class="fixed bottom-0 left-0 right-0 glass">
+                    <div class="container mx-auto px-4 py-4">
+                        <div class="custom-audio-player">
+                            <audio id="audioPlayer" controls class="w-full"></audio>
+                        </div>
+                        <div id="nowPlaying" class="text-center font-semibold text-xs truncate text-primary-600 dark:text-primary-400 mt-2"></div>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <script src="artist.js"></script>
+    <script src="playlist.js"></script>
+    <script>
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const resultsContainer = document.getElementById('results');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const nowPlaying = document.getElementById('nowPlaying');
+        const resultsTitle = document.getElementById('resultsTitle');
+        const clearSearchButton = document.getElementById('clearSearch');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const artistSection = document.getElementById('artistSection');
+        const Sidebar = document.getElementById('sidebar');
+        const headerToggleBtn = document.getElementById('headerToggleBtn');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
         
-        <section class="download">
-            <a href="https://github.com/Shashwat-CODING/S-CODERS-Studio/releases/download/1.1.0/scodify.app.zip" class="download-btn">Download for MAC</a>
-            <a href="https://github.com/Shashwat-CODING/S-CODERS-Studio/releases/download/1.1.0/scodify-win32-x64.rar" class="download-btn">Download for Windows</a>
-            <a href="https://github.com/Shashwat-CODING/S-CODERS-Studio/releases/download/1.1.0/Scodify_1_1.0.apk" class="download-btn">Download for Android</a>
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2024 S-CODERS Studio. All rights reserved.</p>
-    </footer>
+        
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            sidebarOverlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+        }
+
+        headerToggleBtn.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // New: Close sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && !headerToggleBtn.contains(e.target) && sidebar.classList.contains('open')) {
+                toggleSidebar();
+            }
+        });
+
+        const colorThief = new ColorThief();
+        let currentThumbnail = null;
+    
+        function addCacheBuster(url) {
+            const cacheBuster = `cache_buster=${Date.now()}`;
+            return url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
+        }
+
+        headerToggleBtn.addEventListener('click', toggleSidebar);
+    
+        function createArtistElements() {
+            const artistContainer = artistSection.querySelector('.artist-section');
+            sampleArtists.forEach(artist => {
+                const artistElement = document.createElement('div');
+                artistElement.className = 'artist-item';
+                artistElement.innerHTML = `
+                    <img src="${artist.image}" alt="${artist.name}" class="artist-image">
+                    <span class="artist-name text-sm font-medium">${artist.name}</span>
+                `;
+                artistElement.addEventListener('click', () => searchArtist(artist.name));
+                artistContainer.appendChild(artistElement);
+            });
+        }
+    
+        function searchArtist(artistName) {
+            searchInput.value = artistName;
+            performSearch(artistName);
+        }
+    
+        async function performSearch(query) {
+            try {
+                const response = await fetch(addCacheBuster(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=all`), {cache: 'no-store'});
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                resultsTitle.textContent = `Search Results for "${query}"`;
+                displayResults(data.items);
+                artistSection.style.display = 'none';
+            } catch (error) {
+                console.error('Error fetching search results:', error);
+                resultsContainer.innerHTML = '<p class="text-center text-red-500">An error occurred while fetching results. Please try again.</p>';
+            }
+        }
+
+        async function playAudio(videoUrl, title, thumbnailUrl, playlist = null, index = 0) {
+                        const videoId = videoUrl.split('v=')[1];
+                        nowPlaying.textContent = `Loading audio for: ${title}`;
+                
+                        try {
+                            const audioUrl = await fetchAudioUrlWithRetry(videoId);
+                            audioPlayer.src = audioUrl;
+                            await audioPlayer.play();
+                            nowPlaying.textContent = `Now playing: ${title}`;
+                            updateBackgroundColor(thumbnailUrl);
+                
+                            if (playlist && index < playlist.length - 1) {
+                                audioPlayer.onended = () => {
+                                    const nextSong = playlist[index + 1];
+                                    playAudio(nextSong.id, nextSong.title, nextSong.thumbnail, playlist, index + 1);
+                                };
+                            } else {
+                                audioPlayer.onended = setDefaultBackground;
+                            }
+                        } catch (error) {
+                            console.error('Error fetching or playing audio stream:', error);
+                            nowPlaying.textContent = 'Error: Could not play audio. Click to retry.';
+                            nowPlaying.onclick = () => playAudio(videoUrl, title, thumbnailUrl, playlist, index);
+                        }
+                    }
+    
+        async function fetchTrendingVideos() {
+            try {
+                const response = await fetch(addCacheBuster('https://pipedapi.kavin.rocks/trending?region=IN&filter=music'), {
+                    cache: 'no-store'
+                });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                console.error('Error fetching trending videos:', error);
+                resultsContainer.innerHTML = '<p class="text-center text-red-500">An error occurred while fetching trending videos. Please try again.</p>';
+            }
+        }
+    
+        function setBackgroundColor(color) {
+            document.body.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+        }
+    
+        function getAverageColor(imgEl) {
+            return new Promise((resolve) => {
+                if (imgEl.complete) {
+                    resolve(colorThief.getColor(imgEl));
+                } else {
+                    imgEl.addEventListener('load', function() {
+                        resolve(colorThief.getColor(this));
+                    });
+                }
+            });
+        }
+    
+        async function updateBackgroundColor(thumbnailUrl) {
+            if (thumbnailUrl === currentThumbnail) return;
+            currentThumbnail = thumbnailUrl;
+    
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = thumbnailUrl;
+    
+            try {
+                const color = await getAverageColor(img);
+                setBackgroundColor(color);
+            } catch (error) {
+                console.error('Error getting average color:', error);
+                setDefaultBackground();
+            }
+        }
+    
+        function setDefaultBackground() {
+            setBackgroundColor([30, 15, 0]); // Orangish black
+        }
+    
+        function displayResults(items) {
+            resultsContainer.innerHTML = '';
+            items.forEach(item => {
+                if (item.type === 'stream' || item.type === 'video') {
+                    const videoElement = document.createElement('div');
+                    videoElement.className = 'video-card';
+                    videoElement.innerHTML = `
+                        <div class="video-thumbnail">
+                            <img src="${item.thumbnail}" alt="${item.title}" loading="lazy">
+                        </div>
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold mb-2 line-clamp-2">${item.title}</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${item.uploaderName}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-500">${item.views} views • ${item.uploadedDate || item.uploaded}</p>
+                            <button class="mt-2 bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600">Add to Playlist</button>
+                        </div>
+                    `;
+                    videoElement.querySelector('.video-thumbnail').addEventListener('click', () => playAudio(item.url, item.title, item.thumbnail));
+                    
+                    resultsContainer.appendChild(videoElement);
+                }
+            });
+        }
+
+        async function fetchAudioUrlWithRetry(videoId, retries = 3) {
+        const apis = [
+            { name: '1', fetch: fetchPipedApiUrl },
+            { name: '2', fetch: fetchSecondPipedApiUrl },
+            { name: '3', fetch: fetchAceThinkerApiUrl },
+            { name: '4', fetch: fetchNewApiUrl },
+            { name: '5', fetch: fetchCobaltApiUrl },
+            { name: '6', fetch: fetchYtdlOnlineUrl }
+        ];
+
+        for (let attempt = 0; attempt < retries; attempt++) {
+            for (const api of apis) {
+                try {
+                    console.log(`Attempting to fetch from ${api.name} API...`);
+                    const url = await api.fetch(videoId);
+                    if (url) {
+                        console.log(`Success! ${api.name} API returned a valid URL: ${url}`);
+                        return url;
+                    } else {
+                        console.log(`${api.name} API did not return a valid URL.`);
+                    }
+                } catch (error) {
+                    console.error(`Error fetching from ${api.name} API:`, error);
+                }
+            }
+            console.log(`Retrying in ${attempt + 1} seconds...`);
+            await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+        }
+        throw new Error('All APIs failed to provide a valid audio URL');
+    }
+
+    async function fetchPipedApiUrl(videoId) {
+        const response = await fetch(addCacheBuster(`https://pipedapi.reallyaweso.me/streams/${videoId}`), {
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        const audioStream = data.audioStreams.find(stream => stream.mimeType.startsWith('audio/'));
+        return audioStream ? audioStream.url : null;
+    }
+
+    async function fetchSecondPipedApiUrl(videoId) {
+        const response = await fetch(addCacheBuster(`https://pipedapi.adminforge.de/streams/${videoId}`), {
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        const audioStream = data.audioStreams.find(stream => stream.mimeType.startsWith('audio/'));
+        return audioStream ? audioStream.url : null;
+    }
+
+    async function fetchAceThinkerApiUrl(videoId) {
+        const encodedVideoId = encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`);
+        const apiUrl = `https://www.acethinker.com/downloader/api/video_info.php?url=${encodedVideoId}&israpid=1&ismp3=0`;
+
+        try {
+            const response = await fetch(addCacheBuster(apiUrl), {
+                cache: 'no-store'
+            });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            const data = await response.json();
+            const webaLink = data.links.flat().find(link => link.ext === 'weba');
+            return webaLink ? webaLink.url : null;
+        } catch (error) {
+            console.error('Error fetching from AceThinker API:', error);
+            return null;
+        }
+    }
+
+    async function fetchNewApiUrl(videoId) {
+        const response = await fetch(addCacheBuster(`https://kityune.imput.net/api/json?id=${videoId}`), {
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.status === 'stream' && data.url ? data.url : null;
+    }
+
+    async function fetchCobaltApiUrl(videoId) {
+        const response = await fetch(addCacheBuster('https://api.cobalt.tools/api/json'), {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                url: `https://www.youtube.com/watch?v=${videoId}`,
+                aFormat: "mp3",
+                isAudioOnly: true,
+                audioBitrate: 8000 
+            }),
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.audio || data.url || null;
+    }
+
+    async function fetchYtdlOnlineUrl(videoId) {
+        const response = await fetch(addCacheBuster(`https://api.allorigins.win/raw?url=https://ytdlp.online/stream?command=https://www.youtube.com/watch?v=${videoId} --get-url`), {
+            timeout: 1000,
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const responseText = await response.text();
+        const urls = responseText.split('\n')
+            .filter(line => line.trim().startsWith('data:'))
+            .map(line => line.substring(5).trim())
+            .filter(url => url.startsWith('http'));
+        return urls.length >= 2 ? urls[1] : (urls.length === 1 ? urls[0] : null);
+    }
+    
+        // Event Listeners
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = searchInput.value.trim();
+            if (query === '') return;
+            performSearch(query);
+        });
+    
+        clearSearchButton.addEventListener('click', () => {
+            searchInput.value = '';
+            resultsTitle.textContent = 'Trending';
+            artistSection.style.display = 'block';
+            fetchTrendingVideos();
+        });
+    
+        darkModeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+    
+        audioPlayer.addEventListener('error', (e) => {
+            console.error('Audio player error:', e);
+            nowPlaying.textContent = 'Error: Could not play audio. Click to retry.';
+            nowPlaying.onclick = () => {
+                const currentSrc = audioPlayer.src;
+                const currentTitle = nowPlaying.textContent.replace('Now playing: ', '');
+                playAudio(currentSrc, currentTitle);
+            };
+        });
+    
+        // Initialize
+        window.addEventListener('load', () => {
+            setDefaultBackground();
+            createArtistElements();
+            fetchTrendingVideos();
+        });
+    
+        // Sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+    
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+        }
+    
+        sidebarToggle.addEventListener('click', toggleSidebar);
+        mobileMenuButton.addEventListener('click', toggleSidebar);
+    
+        // Add responsiveness for sidebar
+        function checkWindowSize() {
+            if (window.innerWidth >= 1024) { // lg breakpoint
+                sidebar.classList.add('open');
+            } else {
+                sidebar.classList.remove('open');
+            }
+        }
+    
+        window.addEventListener('resize', checkWindowSize);
+        checkWindowSize(); // Call on initial load
+    </script>
 </body>
 </html>
